@@ -22,10 +22,10 @@ module ArJdbc
         binds = convert_legacy_binds_to_attributes(binds) if binds.first.is_a?(Array)
 
         if without_prepared_statement?(binds)
-          log(sql, name) { @connection.execute_insert_pk(sql, pk) }
+          log(sql, name) { (@raw_connection || @connection).execute_insert_pk(sql, pk) }
         else
           log(sql, name, binds) do
-            @connection.execute_insert_pk(sql, binds, pk)
+            (@raw_connection || @connection).execute_insert_pk(sql, binds, pk)
           end
         end
       end
@@ -45,12 +45,12 @@ module ArJdbc
         binds = convert_legacy_binds_to_attributes(binds) if binds.first.is_a?(Array)
 
         if without_prepared_statement?(binds)
-          log(sql, name) { @connection.execute_query(sql) }
+          log(sql, name) { (@raw_connection || @connection).execute_query(sql) }
         else
           log(sql, name, binds) do
             # this is different from normal AR that always caches
             cached_statement = fetch_cached_statement(sql) if prepare && @jdbc_statement_cache_enabled
-            @connection.execute_prepared_query(sql, binds, cached_statement)
+            (@raw_connection || @connection).execute_prepared_query(sql, binds, cached_statement)
           end
         end
       end
@@ -68,9 +68,9 @@ module ArJdbc
         binds = convert_legacy_binds_to_attributes(binds) if binds.first.is_a?(Array)
 
         if without_prepared_statement?(binds)
-          log(sql, name) { @connection.execute_update(sql) }
+          log(sql, name) { (@raw_connection || @connection).execute_update(sql) }
         else
-          log(sql, name, binds) { @connection.execute_prepared_update(sql, binds) }
+          log(sql, name, binds) { (@raw_connection || @connection).execute_prepared_update(sql, binds) }
         end
       end
       alias :exec_delete :exec_update
@@ -85,7 +85,7 @@ module ArJdbc
         materialize_transactions
         mark_transaction_written_if_write(sql)
 
-        log(sql, name, async: async) { @connection.execute(sql) }
+        log(sql, name, async: async) { (@raw_connection || @connection).execute(sql) }
       end
 
       # overridden to support legacy binds
